@@ -1,0 +1,4 @@
+theme: jekyll-theme-tactile
+title: Raspberry Network Display 
+description: Some code to frame-buffer display images and switch between them via network
+show-downloads: false

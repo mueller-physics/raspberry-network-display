@@ -1,0 +1,8 @@
+# Ignore class files and packed JAR files
+
+*.class
+*.jar
+
+# Ignore the symlink to the ImageJ source
+ij
+ImageJSource

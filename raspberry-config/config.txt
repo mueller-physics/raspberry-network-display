@@ -1,0 +1,69 @@
+# hdmi_save=1
+
+# for all options see http://elinux.org/RPi_config.txt
+
+# set the size of the framebuffer
+# this is not the monitor resolution, the buffer gets scaled.
+# set that to our monitors size
+# also important: set 8bits per pixel color depth
+
+framebuffer_width=1980
+framebuffer_height=1200
+framebuffer_depth=24
+
+# disable any overscanning (should be the default)
+# disable_overscan=1
+
+# force to use HDMI output, independet of any connected cables
+hdmi_force_hotplug=1
+
+# ignore any preferred resolution or modelines the monitor sends us
+# useful only for testing, as we overwrite the modeline anyway
+# hdmi_ignore_edid=0xa5000080
+
+
+# Set the HDMI port to DMT mode (DVI instead of HDMI)
+hdmi_group=2
+hdmi_drive=1
+
+
+# =================================================================
+
+# ---- Either -----
+
+# This mode forces 1920x1200@60Hz (reduced blanking) for the output
+# Pixel clock is below 160 Mhz, which is the standard limit, and also
+# the limit for the SLM. If this is not working, the cable is broken.
+# Otherwise, this mode should also be the one the Raspberry autoselects
+# when the SLM is connected, since it is the closets standard modeline
+# to the SLMs non-standard request.
+
+# hdmi_mode=68
+
+# ---- Or -----
+
+# This creates a custom modeline (becomes mode #87)
+# and selects it. The parameters are taken from the SLM's EDID data.
+# Horz. and Vert. freq., as well as pixel clock, now matches the
+# signal obtained plug-and-play under Windows.
+
+hdmi_timings= 1920  1 32 128 32  1200  1 1 3 21  0 0 0 58 0 150000000 5 
+hdmi_mode=87
+
+
+# =================================================================
+
+# boost the HDMI output level (usually not needed)
+# config_hdmi_boost=4
+
+# turn off fuzzy matching to quoted monitor timings
+# avoid_edid_fuzzy_match=1
+
+# This overclocks the ARM CPU from 700 to 900 MHz
+arm_freq=900
+
+# This sets some frequencies for the GPU
+core_freq=250
+sdram_freq=450
+over_voltage=2
+gpu_mem=32

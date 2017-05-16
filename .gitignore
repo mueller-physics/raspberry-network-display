@@ -1,0 +1,4 @@
+# for running Jekyll locally
+
+_site
+.sass-cache

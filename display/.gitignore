@@ -1,0 +1,14 @@
+# Objects
+*.o
+
+# compiled binarys
+fbrunner
+udp-cli-sender
+send-udp-on-ttl
+
+# packed source code
+RaspberrySimControl*.tar
+
+# images
+*.png
+

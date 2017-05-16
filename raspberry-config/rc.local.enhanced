@@ -1,0 +1,42 @@
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+# Print the IP address
+_IP=$(hostname -I) || true
+if [ "$_IP" ]; then
+  printf "My IP address is %s\n" "$_IP"
+fi
+
+# change into the standard user's home
+cd /home/pi
+
+# save the old log files
+mv slmsimulator*.log oldlogs
+mv fbrunner*.log oldlogs
+
+# change into the software folder
+cd /home/pi/SLM-software/
+
+# start the framebuffer display thingy
+./fbrunner > ../fbrunner_$(date +%Y%m%d-%H%M).log &
+
+
+# if need be (comment in the next lines), start the
+# "send a UDP package when a TTL arrived" feature
+
+#cd ..
+#./slm-simulator 127.0.0.1 > slmsimulator_$(date +%Y%m%d-%H%M).log 
+
+# return (do not comment this out)
+exit 0
+
