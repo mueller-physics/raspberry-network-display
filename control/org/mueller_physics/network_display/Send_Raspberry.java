@@ -52,9 +52,15 @@ import java.text.DecimalFormat;
 // Small plugin to send images over the network
 public class Send_Raspberry implements PlugIn {
 
+	
+	private static final int displWidth  = 1280;
+	private static final int displHeight = 1024;
+
 	private String [] MemBanks = { "O", "I", "II", "III", "IV" };
 
 	private final static int maxStackLength = 12;
+
+	private final static String prefKeyHostname="org.mueller-physics.network-display.hostname";
 
 	public static void main( String [] args ) {
 	    Send_Raspberry cl = new Send_Raspberry();
@@ -95,12 +101,12 @@ public class Send_Raspberry implements PlugIn {
 
 		if (arg.equals("set-hostname")) {
 		    GenericDialog gd = new GenericDialog("Network display");
-		    String hostname = Prefs.get("bbp.nd.hostname", "computer.domain.tld");
+		    String hostname = Prefs.get(prefKeyHostname, "Name or IP");
 		    gd.addStringField("Hostname", hostname);
 		    gd.showDialog();
 		    if (gd.wasCanceled()) return;
 		    hostname = gd.getNextString();
-		    Prefs.set("bbp.nd.hostname", hostname);
+		    Prefs.set(prefKeyHostname, hostname);
 		    //IJ.log("Raspberry hostname set to: "+hostname);
 		}
 
@@ -128,7 +134,7 @@ public class Send_Raspberry implements PlugIn {
 		//	}
 
 		// get our presets
-		String hostname = Prefs.get("bbp.nd.hostname", "tesla");
+		String hostname = Prefs.get(prefKeyHostname, "127.0.0.1");
 
 		// Display the parameter dialog
  		GenericDialog gd = new GenericDialog("Transfer to Raspberry");
@@ -144,16 +150,15 @@ public class Send_Raspberry implements PlugIn {
 		int nrMemory = gd.getNextChoiceIndex();
 
 		if (storeConf)
-			Prefs.set("bbp.nd.hostname", hostname);
+			Prefs.set(prefKeyHostname, hostname);
 
 		ImageStack out;
 		
 		// see if we have to resize the stack
-		if (  (aip.getStack().getWidth() != 1920 ) 
-		   || (aip.getStack().getHeight()!= 1200 ) ) {
+		if (  (aip.getStack().getWidth() != displWidth ) 
+		   || (aip.getStack().getHeight()!= displHeight ) ) {
 		   	StackProcessor sp = new StackProcessor( aip.getStack() );
-		   	out = sp.resize(1920,1200,true);
-		   	//IJ.log("Resized stack to 1920x1200 ");
+		   	out = sp.resize(displWidth,displHeight,true);
 		   	ImagePlus newStack = new ImagePlus ("Resized stack to display", out );
 		   	newStack.show();
 		   } 
@@ -172,7 +177,7 @@ public class Send_Raspberry implements PlugIn {
 		}
 
 		sendTimer.stop();
-		double rate  = (1920*1200*3*numImages) / (1024.*1024.);
+		double rate  = (displWidth*displHeight*3*numImages) / (1024.*1024.);
 		       rate /= sendTimer.getMS() / 1000.;
 		DecimalFormat df = new DecimalFormat("##.###");
 		       
@@ -191,8 +196,8 @@ public class Send_Raspberry implements PlugIn {
 	 */
 	static public void sendStack( String host, ImageStack is , int nrMemory ) 
 		throws java.net.UnknownHostException, java.io.IOException {
-		if (  (is.getWidth() != 1920 ) || (is.getHeight()!= 1200 ) )
-		   throw new RuntimeException("Stack is not sized 1920x1200");
+		if (  (is.getWidth() != displWidth ) || (is.getHeight()!= displHeight ) )
+		   throw new RuntimeException("Stack is not sized "+displWidth+"x"+displHeight);
 
 		//if (is.getBitDepth() != 8)
 		//   throw new RuntimeException("Stack is not 8 bit grayscale");
@@ -270,12 +275,12 @@ public class Send_Raspberry implements PlugIn {
 
 		// get hostname
 		if ( host == null)	
-			host = Prefs.get("bbp.nd.hostname", "invalid");
+			host = Prefs.get(prefKeyHostname, "invalid.tld");
 		if ( host.equals("invalid"))
 		    throw new java.net.UnknownHostException("No hostname set");
 
 		// set size and resize if needed
-		final int w=1920, h=1200, len   = w * h * 3;
+		final int w=displWidth, h=displHeight, len   = w * h * 3;
 		final byte [] px = new byte[ len ];
 		if (( ip.getWidth() != w ) || ( ip.getHeight() != h))
 		    ip = ip.resize( w, h);
@@ -330,16 +335,16 @@ public class Send_Raspberry implements PlugIn {
 		throws java.net.UnknownHostException, java.io.IOException {
 
 		// generate raw data
-		final byte [] px = new byte[ 1920*1200*3 ];
+		final byte [] px = new byte[ displWidth*displHeight*3 ];
 		ByteProcessor bs;
 		if (full) 
-		    bs = new ByteProcessor( 1920, 1200);
+		    bs = new ByteProcessor( displWidth, displHeight);
 		else
 		    bs = new ByteProcessor( 256, 256);
 
 		// connect a Socket
 		Socket comm = new Socket( host, 32321 );
-		comm.setReceiveBufferSize( 1920*1200 );
+		comm.setReceiveBufferSize( displWidth*displHeight );
 		
 		OutputStream commStrOut = comm.getOutputStream();
 		InputStream  commStrIn  = comm.getInputStream();
@@ -370,9 +375,9 @@ public class Send_Raspberry implements PlugIn {
 	
 		// copy image into the Byte Processor
 		if (full)
-		    for (int y=0;y<1200;y++)
-		    for (int x=0;x<1920;x++) {
-		        bs.set(x,y,px[(x + y*1920)*3]); 
+		    for (int y=0;y<displHeight;y++)
+		    for (int x=0;x<displWidth;x++) {
+		        bs.set(x,y,px[(x + y*displWidth)*3]); 
 		    }
 		else
 		    for (int y=0;y<256;y++)
@@ -396,7 +401,7 @@ public class Send_Raspberry implements PlugIn {
 	static public void setSimPattern(String hostname, int angle, int px, int len, int pha ) 
 		throws java.net.UnknownHostException, java.io.IOException  { 
 		sendUDP( hostname, "PTRNLI", angle, px, len, pha);
-		IJ.log("sim pattern: "+angle+" "+px+" "+len+" "+pha);
+		//IJ.log("sim pattern: "+angle+" "+px+" "+len+" "+pha);
 	}
 
 
@@ -578,7 +583,7 @@ public class Send_Raspberry implements PlugIn {
 		for (int i=0; i<bb.array().length; i++) {
 		    foo+=" "+bb.array()[i];
 		}
-		IJ.log("Sending UPD message: "+foo);
+		//IJ.log("Sending UPD message: "+foo);
 	 
         	DatagramPacket sendpacket = 
         		new DatagramPacket(
@@ -636,7 +641,7 @@ public class Send_Raspberry implements PlugIn {
 
 			// --------------------------------------------------------
 			//
-			// SIM Pattern tab
+			// Striped Pattern tab
 
 			JPanel patternContent = new JPanel(new GridLayout(5,2));
 
@@ -658,7 +663,7 @@ public class Send_Raspberry implements PlugIn {
 			patternContent.add(new JLabel(">"));
 			patternContent.add(sendSIMpat);
 
-			tabbedPane.addTab("SIM", patternContent);
+			tabbedPane.addTab("Stripes", patternContent);
 
 			// --------------------------------------------------------
 			//
@@ -711,30 +716,13 @@ public class Send_Raspberry implements PlugIn {
 			memRow.add(  memsContent );
 			tabbedPane.addTab("Memory", memRow);
 
-			// --------------------------------------------------------
-			//
-			// Test tab
-			JPanel testPanel = new JPanel( new GridLayout(4,1) );
-			testCB = new JButton("Test CB");
-			testSIM = new JButton("Test SIM");
-			test2xSparseSIM = new JButton("2x sparse SIM");
-			test3xSparseSIM = new JButton("3x sparse SIM");
-			testCB.addActionListener(this);
-			testSIM.addActionListener(this);
-			test2xSparseSIM.addActionListener(this);
-			test3xSparseSIM.addActionListener(this);
-			testPanel.add(testCB);
-			testPanel.add(testSIM);
-			testPanel.add(test2xSparseSIM);
-			testPanel.add(test3xSparseSIM);
-			tabbedPane.addTab("Tests",testPanel);
-
 
 
 			// --------------------------------------------------------
 			//
 			// SLM Simulator tab
-			
+
+			/*
 			JPanel simSimContent = new JPanel(new GridLayout(5,2));
 
 			tOnSpin   = new JSpinner(new SpinnerNumberModel(200,0,1000,5));
@@ -745,20 +733,20 @@ public class Send_Raspberry implements PlugIn {
 			sendSlmBlink = new JButton("Blink/Ping");
 			sendSlmBlink.addActionListener(this);
 
-			simSimContent.add(new JLabel("tOn (ms)"));
-			simSimContent.add( tOnSpin );
-			simSimContent.add(new JLabel("tOff (ms)"));
-			simSimContent.add( tOffSpin );
-			simSimContent.add(new JLabel("Cycles"));
-			simSimContent.add( cycleSpin );
-			simSimContent.add(new JLabel(">"));
-			simSimContent.add( sendSimSimTime );
-			simSimContent.add(new JLabel(">"));
-			simSimContent.add( sendSlmBlink );
+			slmSimContent.add(new JLabel("tOn (ms)"));
+			slmSimContent.add( tOnSpin );
+			slmSimContent.add(new JLabel("tOff (ms)"));
+			slmSimContent.add( tOffSpin );
+			slmSimContent.add(new JLabel("Cycles"));
+			slmSimContent.add( cycleSpin );
+			slmSimContent.add(new JLabel(">"));
+			slmSimContent.add( sendSimSimTime );
+			slmSimContent.add(new JLabel(">"));
+			slmSimContent.add( sendSlmBlink );
 
 			
-			tabbedPane.addTab("SimSim", simSimContent);
-
+			tabbedPane.addTab("SlmSim", simSimContent);
+			*/
 						
 			// --------------------------------------------------------
 			//
@@ -768,7 +756,7 @@ public class Send_Raspberry implements PlugIn {
 			JPanel lowButtons = new JPanel(new GridLayout(2,3));
 			JPanel lowRow     = new JPanel(new GridLayout(2,1));
 			
-			host = new JTextField(Prefs.get("bbp.nd.hostname", "tesla"));
+			host = new JTextField(Prefs.get(prefKeyHostname, "127.0.0.1"));
 			ping = new JButton("Ping");
 			test = new JButton("Test");
 			getffb= new JButton("Get full");
@@ -940,6 +928,7 @@ public class Send_Raspberry implements PlugIn {
 			}
 			
 			// update SIM Simulator timing
+			/*
 			if ( who == sendSimSimTime ) {
 				int tOn    = (Integer)tOnSpin.getValue(); 
 				int tOff   = (Integer)tOffSpin.getValue(); 
@@ -948,6 +937,7 @@ public class Send_Raspberry implements PlugIn {
 				sendUDP( hostname, "SLMTIME", tOn, tOff, cycles, 0, 32322);
 				
 			}
+			*/
 			
 			// send a blink / ping
 			if ( who == sendSlmBlink )
