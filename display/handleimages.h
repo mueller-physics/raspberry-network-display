@@ -26,10 +26,12 @@ static const int maxReadImages = 250;
 // allocate and initialize the image buffer
 bbpnd_imageBuffer * bbpnd_initImageBuffer(int w, int h, int size) ;
 
-// read all images in directory 'dir' into a buffer
-// returns the number of images read or a negative integer in
-// case of error
-int bbpnd_readImages(const char * dirname, bbpnd_imageBuffer *buf);
+// function to fill all memory banks from images read from disk
+// it will check in folder 'dirname' for files names
+// img_mb##_nr##_w####_h####.png
+// e.g. img_mb02_nr10_w1024_h0768.png
+// to load image 10 for memory bank 2 on a 1024x768 sized display
+int bbpnd_readImages(const char * dirname, bbpnd_imageBuffer **buf);
 
 // find an image in the buffer by its name
 // returns either the index or -1 if not found

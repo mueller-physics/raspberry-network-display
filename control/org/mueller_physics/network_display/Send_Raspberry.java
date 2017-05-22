@@ -58,7 +58,7 @@ public class Send_Raspberry implements PlugIn {
 
 	private String [] MemBanks = { "O", "I", "II", "III", "IV" };
 
-	private final static int maxStackLength = 12;
+	private final static int maxStackLength = 15;
 
 	private final static String prefKeyHostname="org.mueller-physics.network-display.hostname";
 
@@ -693,8 +693,8 @@ public class Send_Raspberry implements PlugIn {
 			// Memory tab
 			
 			// number buttons
-			nums = new JButton[13];
-			JPanel numsContent = new JPanel( new GridLayout(4,3) );
+			nums = new JButton[16];
+			JPanel numsContent = new JPanel( new GridLayout(5,3) );
 			for (int i=1;i<nums.length;i++) {
 				nums[i] = new JButton(""+i);
 				nums[i].addActionListener(this);

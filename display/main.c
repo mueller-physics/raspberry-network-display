@@ -59,9 +59,39 @@ int main( int argc, char ** argv) {
  
     bbpnd_imageBuffer * images = imgBuffers[0];
 
+
+    // set the output line buffered
+    setlinebuf( stdout);
+    setlinebuf( stderr);
+
+
+
+    // initalize the image buffers
+    {
+	    double initPtime = getTime();
+	    bbpnd_initPattern( imgBuffers[0] , 2 , 6, 0);
+	    bbpnd_initPattern( imgBuffers[1] , 2 , 6, 1);
+	    bbpnd_initPattern( imgBuffers[2] , 3 , 9, 0);
+	    bbpnd_initPattern( imgBuffers[3] , 3 , 9, 1);
+	    initPtime = getTime() - initPtime;
+	    printf("# Init Pattern %7.3f ms / 48 pattern : %7.3f ms/pattern \n", initPtime, initPtime/48 );
+    }
+    
+    // TODO / NOTE: change these lines to automatically load PNG images at programm start
+    int nrImages = bbpnd_readImages( "./images", imgBuffers);
+    printf("# Number of images : %d \n", nrImages);
+
     // connect to the framebuffer
     bbpnd_imageContent fb;
-    bbpnd_connectFramebuffer( &fb );
+    if ( argc < 2 || strncmp( argv[1],"nofb",4 ) != 0 ) {
+        bbpnd_connectFramebuffer( &fb );
+    } else {
+	// if no framebuffer, just init to any unused buffer
+	printf("# Not opening framebuffer (as requested)\n");
+	fb.width = FB_IMAGE_W; fb.height = FB_IMAGE_H;
+	fb.px = malloc( FB_IMAGE_W * FB_IMAGE_H * 3);
+	pthread_mutex_init(&(fb.mutex), NULL);
+    }
     
     // fork a server thread
     pthread_t server_thread;
@@ -83,25 +113,6 @@ int main( int argc, char ** argv) {
 
 
 
-    // set the output line buffered
-    setlinebuf( stdout);
-    setlinebuf( stderr);
-
-    // TODO / NOTE: change these lines to automatically load PNG images at programm start
-
-    //int nrImages = bbpnd_readImages( "./images", images);
-    //printf("# Number of images : %d \n", nrImages);
-
-    // initalize the image buffers
-    {
-	    double initPtime = getTime();
-	    bbpnd_initPattern( imgBuffers[0] , 2 , 6, 0);
-	    bbpnd_initPattern( imgBuffers[1] , 2 , 6, 1);
-	    bbpnd_initPattern( imgBuffers[2] , 3 , 9, 0);
-	    bbpnd_initPattern( imgBuffers[3] , 3 , 9, 1);
-	    initPtime = getTime() - initPtime;
-	    printf("# Init Pattern %7.3f ms / 48 pattern : %7.3f ms/pattern \n", initPtime, initPtime/48 );
-    }
 
     // open the UDP port
     int udpSocket  = bbpnd_initUdp( 32320 );
@@ -157,6 +168,9 @@ int main( int argc, char ** argv) {
 	    respond = 1;
 	}
 
+
+	// TODO: reimplement this to load images directly from disk
+	/*
 	// switch the displayed image by name
 	if (bbpnd_cmdIsLoadName( & cliMsg) ) {
 
@@ -173,6 +187,8 @@ int main( int argc, char ** argv) {
 	    
 	    respond = 1;
 	} 
+	*/
+	
 	
 	// switch the displayed image by number
 	if (bbpnd_cmdIsLoadNumber( & cliMsg) ) {

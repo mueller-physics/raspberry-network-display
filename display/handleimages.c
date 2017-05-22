@@ -88,12 +88,10 @@ void bbpnd_freeImageBuffer( bbpnd_imageBuffer * buf ) {
 /**
  * Read all PNGs in the given folder into data
  * */
-int bbpnd_readImages(const char * dirname, bbpnd_imageBuffer * buf) {
+int bbpnd_readImages(const char * dirname, bbpnd_imageBuffer ** buf) {
 
     // data structures
-    struct dirent *dp;
     DIR *dfd;
-
 
     // open the directory
     if ( (dfd = opendir(dirname)) == NULL ) {
@@ -101,76 +99,74 @@ int bbpnd_readImages(const char * dirname, bbpnd_imageBuffer * buf) {
 	exit(-1);
     }
 
-    // loop through all the files
     char cur_fname[2048];
-    int imageCount = 1;
+   
+
+    // loop all memory banks and images within that bank
+    int imageCount=0;
+
+    for (int cur_mb=0; cur_mb<BBPND_MAXIMUM_MEMORY_BANK; cur_mb++) 
+    for (int cur_img=0; cur_img<BBPND_IMAGES_PER_STACK; cur_img++)  {
     
-    bbpnd_imageContent * pngs = buf->img;
 
-    while (((dp = readdir(dfd)) != NULL)&&( imageCount +1 < buf->count )) {
-	sprintf( cur_fname, "%s/%s" , dirname, dp->d_name);
-
-	// check file ending
-	int isPNG = 0;
-	char * point;
-	if((point = strrchr(cur_fname,'.')) != NULL ) 
-	    if(strcmp(point,".png") == 0)
-		isPNG=1;
-
-	// read the file if .png
-	if (isPNG) {
-	    printf("# Reading PNG [%03d] :: %s \n" ,
-		imageCount, cur_fname);
-
-	    // call into lodepng
-	    unsigned char * tmpImgData;
-	    unsigned int in_width, in_height;
-	    unsigned error = lodepng_decode32_file(
-	       &tmpImgData , &in_width, &in_height, cur_fname);
-
-	    // store the filename (w/o path), max 255 chars
-	    snprintf(pngs[imageCount].fname, 
-			255, "%s", dp->d_name); 
-
-
-	    // for the moment: Fail completely if any single
-	    // image fails loading
-	    if(error) {
-		fprintf(stderr, "error %u: %s\n", 
-		    error, lodepng_error_text(error));
-		exit(-3);
-	    }
-
-	    if (in_width!=buf->width) {
-		fprintf(stderr,
-		    "Image width mismatch, should be %d, is %d\n",
-		    buf->width, in_width);
-		exit(-3);
-	    }
-
-	    if (in_height!=buf->height) {
-		fprintf(stderr,
-		    "Image height mismatch, should be %d, is %d\n",
-		    buf->height, in_height);
-		exit(-3);
-	    }
-
-	    // convert the PNG
-	    bbpnd_convert32to24( tmpImgData, 
-		pngs[imageCount].px,
-		pngs[imageCount].width, 
-		pngs[imageCount].height);
-	    free( tmpImgData );
-
-	    // increase image counter
-	    imageCount++;
-	}
-	// ignore file if !.png
-	else {
-	    printf("# Ignoring file     :: %s \n", cur_fname);
-	}
 	
-    
+	bbpnd_imageContent curImgPtr = buf[cur_mb]->img[cur_img]; 
+
+
+	// create the filename
+	snprintf( cur_fname, 2047, "%s/img_mb%02d_img%02d_w%04d_h%04d.png",
+	    dirname, cur_mb, cur_img, FB_IMAGE_W, FB_IMAGE_H);
+	
+	// look if that file exists and is readable
+	if ( access( cur_fname, R_OK ) != 0) {
+	    printf("# file '%s' not found \n", cur_fname);
+	    continue;	
+	}
+
+	printf("# Reading file %s \n" , cur_fname );
+
+	// call into lodepng
+	unsigned char * tmpImgData;
+	unsigned int in_width, in_height;
+	unsigned error = lodepng_decode32_file(
+	   &tmpImgData , &in_width, &in_height, cur_fname);
+
+	// store the filename (w/o path), max 255 chars
+	snprintf(curImgPtr.fname, 255, "%s", cur_fname); 
+
+
+	// for the moment: Fail completely if any single
+	// image fails loading
+	if(error) {
+	    fprintf(stderr, "error %u: %s\n", 
+		error, lodepng_error_text(error));
+	    exit(-3);
+	}
+
+	if (in_width!=buf[cur_mb]->width) {
+	    fprintf(stderr,
+		"Image width mismatch, should be %d, is %d\n",
+		buf[cur_mb]->width, in_width);
+	    exit(-3);
+	}
+
+	if (in_height!=buf[cur_mb]->height) {
+	    fprintf(stderr,
+		"Image height mismatch, should be %d, is %d\n",
+		buf[cur_mb]->height, in_height);
+	    exit(-3);
+	}
+
+
+
+	// convert the PNG
+	bbpnd_convert32to24( tmpImgData, 
+	    curImgPtr.px,
+	    curImgPtr.width, 
+	    curImgPtr.height);
+	free( tmpImgData );
+
+	imageCount++;
     }
 
     // return our collected images

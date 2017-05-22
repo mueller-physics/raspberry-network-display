@@ -27,13 +27,13 @@ along with RND.  If not, see <http://www.gnu.org/licenses/>
 // this sets width and height of the framebuffer
 // all images have to be in this size
 #define FB_IMAGE_W 1280
-#define FB_IMAGE_H 800
+#define FB_IMAGE_H 1024
 
 // this sets how many memory banks there are, and
 // how many image slots per memory bank. Keep in mind
 // all of these have to fit the raspberry's memory in 24bit per pxl
 #define BBPND_MAXIMUM_MEMORY_BANK 5
-#define BBPND_IMAGES_PER_STACK 14
+#define BBPND_IMAGES_PER_STACK 15
 
 #include <pthread.h>
 
