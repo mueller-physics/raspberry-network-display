@@ -105,8 +105,10 @@ int bbpnd_readImages(const char * dirname, bbpnd_imageBuffer ** buf) {
     // loop all memory banks and images within that bank
     int imageCount=0;
 
-    for (int cur_mb=0; cur_mb<BBPND_MAXIMUM_MEMORY_BANK; cur_mb++) 
-    for (int cur_img=0; cur_img<BBPND_IMAGES_PER_STACK; cur_img++)  {
+    int cur_mb, cur_img;
+
+    for (cur_mb=0; cur_mb<BBPND_MAXIMUM_MEMORY_BANK; cur_mb++) 
+    for (cur_img=0; cur_img<BBPND_IMAGES_PER_STACK; cur_img++)  {
     
 
 	
